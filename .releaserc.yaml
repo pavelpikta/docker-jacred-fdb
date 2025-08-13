@@ -1,0 +1,141 @@
+ci: true
+
+branches:
+  - main
+  - name: beta
+    channel: beta
+    prerelease: beta
+  - name: alpha
+    channel: alpha
+    prerelease: alpha
+  - "+([0-9])?(.{+([0-9]),x}).x"
+
+tagFormat: "${version}"
+
+plugins:
+  - "@semantic-release/commit-analyzer"
+  - "@semantic-release/release-notes-generator"
+  - "@semantic-release/changelog"
+  - "semantic-release-export-data"
+  - - "@semantic-release/git"
+    - assets:
+        - CHANGELOG.md
+      message: "chore(release): ${nextRelease.version} [skip ci]"
+  - "@semantic-release/github"
+
+verifyConditions:
+  - "@semantic-release/changelog"
+  - "@semantic-release/git"
+  - "@semantic-release/github"
+
+analyzeCommits:
+  - path: "@semantic-release/commit-analyzer"
+    preset: conventionalcommits
+    parserOpts:
+      noteKeywords:
+        - BREAKING
+        - BREAKING CHANGE
+        - BREAKING CHANGES
+    releaseRules:
+      - breaking: true
+        release: major
+      - type: build
+        release: patch
+      - type: chore
+        release: false
+      - type: ci
+        release: patch
+      - type: doc
+        release: patch
+      - type: docs
+        release: patch
+      - type: feat
+        release: minor
+      - type: fix
+        release: patch
+      - type: hotfix
+        release: patch
+      - type: perf
+        release: patch
+      - type: refactor
+        release: false
+      - type: revert
+        release: patch
+      - type: style
+        release: false
+      - type: test
+        release: false
+
+generateNotes:
+  - path: "@semantic-release/release-notes-generator"
+    parserOpts:
+      noteKeywords:
+        - BREAKING
+        - BREAKING CHANGE
+        - BREAKING CHANGES
+    writerOpts:
+      groupBy: type
+      commitGroupsSort: title
+      commitsSort: header
+    linkCompare: true
+    linkReferences: true
+    preset: conventionalcommits
+    presetConfig:
+      types:
+        - type: breaking
+          section: "BREAKING CHANGES"
+          hidden: false
+        - type: fix
+          section: "Bug Fixes"
+          hidden: false
+        - type: hotfix
+          section: "Bug Fixes"
+          hidden: false
+        - type: feat
+          section: "Features"
+          hidden: false
+        - type: build
+          section: "CI/CD"
+          hidden: false
+        - type: ci
+          section: "CI/CD"
+          hidden: false
+        - type: doc
+          section: "Docs"
+          hidden: false
+        - type: docs
+          section: "Docs"
+          hidden: false
+        - type: perf
+          section: "Performance"
+        - type: refactor
+          section: "Refactor"
+          hidden: false
+        - type: revert
+          section: "Reverts"
+        - type: style
+          section: "Style"
+        - type: test
+          section: "Tests"
+          hidden: false
+        - type: chore
+          section: "Other"
+          hidden: false
+
+prepare:
+  - path: "@semantic-release/changelog"
+    changelogFile: CHANGELOG.md
+    changelogTitle: "# Changelog"
+  - path: "@semantic-release/git"
+    assets:
+      - CHANGELOG.md
+    message: "chore(release): ${nextRelease.version} [skip ci]"
+
+publish:
+  - path: "@semantic-release/github"
+
+success:
+  - "@semantic-release/github"
+
+fail:
+  - "@semantic-release/github"

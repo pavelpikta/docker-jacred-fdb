@@ -1,0 +1,183 @@
+---
+name: Reusable Docker Build and Push
+
+on:
+  workflow_call:
+    inputs:
+      registry:
+        description: "Container registry hostname, e.g., ghcr.io or docker.io"
+        type: string
+        required: true
+
+      image:
+        description: "Image name (without registry), e.g., jacred-fdb"
+        type: string
+        required: true
+
+      version:
+        description: "Release version (semver) to tag. Leave empty for branch/SHA tags"
+        type: string
+        required: false
+        default: ""
+
+      context:
+        description: "Docker build context path"
+        type: string
+        required: false
+        default: "."
+
+      file:
+        description: "Path to Dockerfile, relative to context. Leave empty for default"
+        type: string
+        required: false
+        default: ""
+
+      platforms:
+        description: "Target platforms for multi-arch builds"
+        type: string
+        required: false
+        default: "linux/amd64,linux/arm64"
+
+      push:
+        description: "Whether to push the image to the registry"
+        type: boolean
+        required: false
+        default: false
+
+      extra_raw_tags:
+        description: "Extra raw tags (newline-separated 'type=raw,value=...')"
+        type: string
+        required: false
+        default: ""
+
+      sbom:
+        description: "Generate and attach SBOM attestation via BuildKit"
+        type: boolean
+        required: false
+        default: true
+
+      provenance:
+        description: "Enable provenance attestation: true|min|max|false"
+        type: string
+        required: false
+        default: "mode=max"
+
+      attest_github:
+        description: "Attach GitHub Artifact Attestation for the image digest"
+        type: boolean
+        required: false
+        default: false
+
+      generate_syft_sbom:
+        description: "Generate standalone Syft SBOM file"
+        type: boolean
+        required: false
+        default: true
+
+      syft_format:
+        description: "SBOM file format for Syft (spdx-json or cyclonedx-json)"
+        type: string
+        required: false
+        default: "spdx-json"
+
+      sbom_artifact_retention_days:
+        description: "Retention period (in days) for uploaded SBOM workflow artifact"
+        type: number
+        required: false
+        default: 14
+
+    # secrets:
+    #   REGISTRY_USERNAME:
+    #     description: "Username for container registry login"
+    #     required: true
+    #   REGISTRY_PASSWORD:
+    #     description: "Password or token for container registry login"
+    #     required: true
+    outputs:
+      tags:
+        description: "Resolved image tags from docker/metadata-action"
+        value: ${{ jobs.build.outputs.tags }}
+      digest:
+        description: "Published image digest"
+        value: ${{ jobs.build.outputs.digest }}
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+      packages: write
+      security-events: write
+    env:
+      IMAGE: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image }}
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v5.0.0
+        with:
+          fetch-depth: 0
+
+      - if: ${{ inputs.push }}
+        uses: docker/login-action@v3.5.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-qemu-action@v3.6.0
+      - uses: docker/setup-buildx-action@v3.11.1
+
+      - id: meta
+        uses: docker/metadata-action@v5.8.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
+            type=ref,event=branch,enable=${{ inputs.version == '' }}
+            type=sha,enable=${{ inputs.version == '' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            ${{ inputs.extra_raw_tags }}
+          labels: |
+            org.opencontainers.image.title=${{ inputs.image }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - id: build
+        uses: docker/build-push-action@v6.18.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.file || '' }}
+          push: ${{ inputs.push }}
+          platforms: ${{ inputs.platforms }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          sbom: ${{ inputs.sbom }}
+          provenance: ${{ inputs.provenance }}
+
+      - if: ${{ inputs.generate_syft_sbom }}
+        uses: anchore/sbom-action@v0.20.4
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          format: ${{ inputs.syft_format }}
+          output-file: sbom.${{ inputs.syft_format == 'spdx-json' && 'spdx.json' || 'json' }}
+
+      - if: ${{ inputs.generate_syft_sbom }}
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.${{ inputs.syft_format == 'spdx-json' && 'spdx.json' || 'json' }}
+          retention-days: ${{ inputs.sbom_artifact_retention_days }}
+
+      - if: ${{ inputs.attest_github && inputs.push }}
+        uses: actions/attest-build-provenance@v2.4.0
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
