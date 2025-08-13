@@ -13,10 +13,6 @@ permissions:
   id-token: write
   attestations: write
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -64,8 +60,8 @@ jobs:
     if: needs.release.outputs.released == 'true'
     uses: ./.github/workflows/reusable-docker-build.yml
     with:
-      registry: ${{ env.REGISTRY }}
-      image: ${{ env.IMAGE_NAME }}
+      registry: ${{ vars.REGISTRY }}
+      image: ${{ vars.IMAGE_NAME }}
       version: ${{ needs.release.outputs.version }}
       push: ${{ github.repository_owner == 'pavelpikta' }}
       attest_github: ${{ github.repository_owner == 'pavelpikta' }}

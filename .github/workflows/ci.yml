@@ -22,16 +22,12 @@ permissions:
   id-token: write
   attestations: write
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-
 jobs:
   ci-image:
     uses: ./.github/workflows/reusable-docker-build.yml
     with:
-      registry: ${{ env.REGISTRY }}
-      image: ${{ env.IMAGE_NAME }}
+      registry: ${{ vars.REGISTRY }}
+      image: ${{ vars.IMAGE_NAME }}
       push: ${{ github.repository_owner == 'pavelpikta' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/develop')) }}
       attest_github: ${{ github.repository_owner == 'pavelpikta' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/develop')) }}
       sbom: true
