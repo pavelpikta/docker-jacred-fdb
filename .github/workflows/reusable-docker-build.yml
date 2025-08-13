@@ -140,6 +140,7 @@ jobs:
           images: ${{ env.IMAGE }}
           tags: |
             type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
+            type=raw,value=v${{ inputs.version }},enable=${{ inputs.version != '' }}
             type=ref,event=branch,enable=${{ inputs.version == '' }}
             type=sha,enable=${{ inputs.version == '' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}

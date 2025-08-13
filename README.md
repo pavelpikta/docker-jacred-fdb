@@ -71,6 +71,7 @@ volumes:
 | Registry | Image | Description |
 |----------|-------|-------------|
 | GitHub Container Registry | `ghcr.io/pavelpikta/jacred-fdb` | Latest builds with attestations |
+| GitHub Container Registry | `ghcr.io/pavelpikta/jacred-fdb:v1.0.0` | Specific version example |
 | GitHub Container Registry | `ghcr.io/pavelpikta/jacred-fdb:1.0.0` | Specific version example |
 
 ### Tags
@@ -80,6 +81,7 @@ volumes:
 | `latest` | Latest stable release from `main` branch | On new releases |
 | `develop` | Development builds from `develop` branch | On each commit |
 | `v1.2.3` | Specific semantic version | Immutable |
+| `1.2.3` | Specific semantic version | Immutable |
 | `sha-abcd123` | Specific commit SHA | Immutable |
 
 ## ⚙️ Configuration
