@@ -1,0 +1,39 @@
+---
+name: CI Branch Non-Release Image
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'bugfix/**'
+      - 'beta'
+      - 'alpha'
+      - '+([0-9])?(.{+([0-9]),x}).x'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+  security-events: write
+
+jobs:
+  ci-image:
+    uses: ./.github/workflows/reusable-docker-build.yml
+    with:
+      registry: ${{ vars.REGISTRY }}
+      image: ${{ vars.IMAGE_NAME }}
+      push: ${{ github.repository_owner == 'pavelpikta' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/develop')) }}
+      attest_github: ${{ github.repository_owner == 'pavelpikta' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/develop')) }}
+      sbom: true
+      provenance: "mode=max"
+      generate_syft_sbom: true
+      sbom_artifact_retention_days: 14
+      extra_raw_tags: ${{ startsWith(github.ref, 'refs/heads/develop') && 'type=raw,value=develop' || '' }}
