@@ -8,10 +8,12 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: write
   packages: write
   id-token: write
   attestations: write
+  security-events: write
 
 jobs:
   release:
