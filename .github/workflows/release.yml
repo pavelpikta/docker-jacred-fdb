@@ -37,6 +37,8 @@ jobs:
       - name: Semantic Release
         id: release
         uses: cycjimmy/semantic-release-action@v4.2.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_PAT }}
         with:
           semantic_version: 24.2.5
           extra_plugins: |
