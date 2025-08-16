@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1](https://github.com/pavelpikta/docker-jacred-fdb/compare/v1.0.0...v1.0.1) (2025-08-16)
+
+### CI/CD
+
+* **deps:** bump anchore/sbom-action from 0.20.4 to 0.20.5 ([#2](https://github.com/pavelpikta/docker-jacred-fdb/issues/2)) ([0faceec](https://github.com/pavelpikta/docker-jacred-fdb/commit/0faceec7f1c51f7182c5db3255fc884a4b54dc14))
+
+### Other
+
+* **ci:** add support for both v-prefixed and non-prefixed semver tags ([1bba69c](https://github.com/pavelpikta/docker-jacred-fdb/commit/1bba69cdea832f46da6e82b899d886193b02d7b9))
+
 ## [1.0.0](https://github.com/pavelpikta/docker-jacred-fdb/compare/...v1.0.0) (2025-08-13)
 
 ### Bug Fixes
